@@ -1,0 +1,92 @@
+{
+  "how_to_edit": "This file is the source of truth for dashboard metrics. Change label, definition, format, or formula, save, then refresh the page (restart is not required). Do not rename id values. formula options: field (use one aggregated column), ratio (numerator / denominator), attainment (selected metric divided by its target). format: crore, percent, count. yoy: rel (percent change), pp (percentage-point change), pp- (lower is better). switchable metrics appear on the metric control and drive charts. has_quota true means that metric has a monthly target, so the glance row can show attainment. Only Net Sales, Gross Profit, and Units have a quota. Margin, return rate, and on-time delivery do not.",
+  "metrics": [
+    {
+      "id": "ns",
+      "label": "Net Sales",
+      "definition": "Order-line net sales after discount and before returns (Net_Sales_INR).",
+      "formula": "field",
+      "field": "ns",
+      "format": "crore",
+      "yoy": "rel",
+      "scorecard": true,
+      "switchable": true,
+      "has_quota": true
+    },
+    {
+      "id": "gp",
+      "label": "Gross Profit",
+      "definition": "Gross profit on the order line (Gross_Profit_INR), which matches Net Sales minus COGS.",
+      "formula": "field",
+      "field": "gp",
+      "format": "crore",
+      "yoy": "rel",
+      "scorecard": true,
+      "switchable": true,
+      "has_quota": true
+    },
+    {
+      "id": "gm",
+      "label": "Gross Margin",
+      "definition": "Gross Profit divided by Net Sales.",
+      "formula": "ratio",
+      "numerator": "gp",
+      "denominator": "ns",
+      "format": "percent",
+      "decimals": 1,
+      "yoy": "pp",
+      "scorecard": true,
+      "switchable": false
+    },
+    {
+      "id": "u",
+      "label": "Units",
+      "definition": "Sum of units sold on the filtered order lines.",
+      "formula": "field",
+      "field": "u",
+      "format": "count",
+      "yoy": "rel",
+      "scorecard": true,
+      "switchable": true,
+      "has_quota": true
+    },
+    {
+      "id": "rr",
+      "label": "Return Rate",
+      "definition": "Returned value divided by Net Sales. A lower rate is better.",
+      "formula": "ratio",
+      "numerator": "ret",
+      "denominator": "ns",
+      "format": "percent",
+      "decimals": 1,
+      "yoy": "pp-",
+      "scorecard": true,
+      "switchable": false
+    },
+    {
+      "id": "ot",
+      "label": "On-Time Delivery",
+      "definition": "Share of order lines with On_Time_Delivery_Flag = Yes.",
+      "formula": "ratio",
+      "numerator": "ot",
+      "denominator": "n",
+      "format": "percent",
+      "decimals": 1,
+      "yoy": "pp",
+      "scorecard": true,
+      "switchable": false
+    },
+    {
+      "id": "att",
+      "label": "Target Attainment",
+      "definition": "Selected metric (Net Sales, Gross Profit, or Units) divided by Monthly_Targets, summed once per sales rep and month so targets are never duplicated across order lines. Shows n/a when a segment, channel, product, or customer filter is on, because targets exist only by rep and month.",
+      "formula": "attainment",
+      "format": "percent",
+      "decimals": 1,
+      "yoy": "pp",
+      "scorecard": true,
+      "switchable": false,
+      "needs_target_scope": true
+    }
+  ]
+}

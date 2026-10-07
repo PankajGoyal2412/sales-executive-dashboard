@@ -1,0 +1,106 @@
+Sales Executive Dashboard — Setup Steps
+=======================================
+
+Quick copy-paste (Windows PowerShell)
+-------------------------------------
+Run these from the project folder:
+  sales-executive-dashboard/
+
+  python -m venv venv
+  .\venv\Scripts\Activate.ps1
+  python -m pip install --upgrade pip
+  pip install -r requirements.txt
+  python Pulse_Builder.py
+  python app.py
+
+Then open http://127.0.0.1:5000/
+Admin rebuild: http://127.0.0.1:5000/?role=admin
+
+
+What each file does
+-------------------
+  app.py                 Flask app (start with: python app.py)
+  Pulse_Builder.py       Builds pulse_cache.json from data.xlsx
+  templates/index.html   Dashboard UI
+  metrics.json           Metric labels, formulas, definitions
+  data.xlsx              Source workbook (Sales_Data + Monthly_Targets)
+  data_checks.ipynb      Pre-presentation checks (Excel + pulse cache)
+  requirements.txt       Python packages
+  Procfile               Render/Heroku start command
+
+Optional — open the data checks notebook:
+  pip install jupyter notebook
+  jupyter notebook data_checks.ipynb
+
+
+Prerequisites
+-------------
+- Python 3.10+ installed
+- Terminal / PowerShell open in this folder:
+  sales-executive-dashboard/
+
+
+1) Create a virtual environment
+-------------------------------
+Windows (PowerShell):
+  python -m venv venv
+
+macOS / Linux:
+  python3 -m venv venv
+
+
+2) Activate the virtual environment
+-----------------------------------
+Windows (PowerShell):
+  .\venv\Scripts\Activate.ps1
+
+Windows (Command Prompt):
+  venv\Scripts\activate.bat
+
+macOS / Linux:
+  source venv/bin/activate
+
+
+3) Install packages (inside venv)
+---------------------------------
+  python -m pip install --upgrade pip
+  pip install -r requirements.txt
+
+If Activate.ps1 is blocked, use venv Python directly:
+  .\venv\Scripts\python.exe -m pip install -r requirements.txt
+  .\venv\Scripts\python.exe Pulse_Builder.py
+  .\venv\Scripts\python.exe app.py
+
+
+4) Build the data cache (optional — app.py also builds on boot)
+---------------------------------------------------------------
+  python Pulse_Builder.py
+
+Requires data.xlsx with sheets:
+  - Sales_Data
+  - Monthly_Targets
+
+
+5) Run the app locally
+----------------------
+  python app.py
+
+Then open:
+  http://127.0.0.1:5000/
+
+Admin demo view (rebuild cache button):
+  http://127.0.0.1:5000/?role=admin
+
+
+6) Optional — rebuild after updating Excel
+------------------------------------------
+1. Update data.xlsx in this folder
+2. Run:  python Pulse_Builder.py
+   OR click "Rebuild data" on the admin page
+
+
+Render / deploy notes
+---------------------
+- Build command:  pip install -r requirements.txt
+- Start command:  gunicorn app:app
+- On boot, the app rebuilds pulse_cache.json if missing or older than data.xlsx

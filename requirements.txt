@@ -1,0 +1,4 @@
+flask==3.0.3           # web framework
+gunicorn==22.0.0       # production server (Render)
+pandas>=2.2.2          # Excel load + sales aggregations
+openpyxl==3.1.5        # read .xlsx files
