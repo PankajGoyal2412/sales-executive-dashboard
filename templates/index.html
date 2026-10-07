@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Executive Sales Dashboard</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+/* Base Pulse theme + executive hierarchy layer */
+/* Layout: sticky filter bar over a summary row (KPIs), then trend, region/rep, product, customer and risk panels. */
+:root{
+  --bg:#f3f4f2; --surface:#fcfcfb; --ink:#14181c; --ink2:#4d555c; --ink3:#7b838a; --line:#dfe2e0; --grid:#e8ebe9;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --good:#0a7d4b; --bad:#c23330; --warn:#b36b00; --chip:#e6ecf4; --chipink:#1d4f91;
+  --f-sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif; --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121415; --surface:#1a1d1f; --ink:#f1f3f2; --ink2:#b9c0c4; --ink3:#8a9298; --line:#2c3134; --grid:#262b2e;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --good:#3fbf86; --bad:#ef6b69; --warn:#e0a03a; --chip:#23303f; --chipink:#9cc3f5; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121415; --surface:#1a1d1f; --ink:#f1f3f2; --ink2:#b9c0c4; --ink3:#8a9298; --line:#2c3134; --grid:#262b2e;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --good:#3fbf86; --bad:#ef6b69; --warn:#e0a03a; --chip:#23303f; --chipink:#9cc3f5; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-sans);font-size:14px;line-height:1.45;padding-inline:clamp(16px,3vw,32px);padding-block:0 40px}
+*{box-sizing:border-box}
+.wrap{max-width:1360px;margin:0 auto}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 24px;padding-block:20px 12px}
+h1{font-size:22px;font-weight:600;margin:0;letter-spacing:-.01em}
+.sub{color:var(--ink2);font-size:13px}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding-block:10px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end}
+.bar label{display:flex;flex-direction:column;gap:3px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);min-width:0}
+select,button{font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+select{min-width:112px;max-width:100%}
+button{cursor:pointer}button:hover{border-color:var(--s1)}
+:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;border-radius:0;padding:6px 10px;background:transparent}
+.seg button[aria-pressed=true]{background:var(--s1);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding-block:10px;min-height:44px;align-items:center}
+.chip{background:var(--chip);color:var(--chipink);border:0;border-radius:99px;padding:3px 10px;font-size:12px}
+.chip::after{content:" ×"}
+.hint{color:var(--ink3);font-size:12px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;min-width:0}
+.kpi .l{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3)}
+.kpi .v{font-family:var(--f-mono);font-size:24px;font-weight:500;margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kpi .d{font-size:12px;font-family:var(--f-mono);margin-top:2px;color:var(--ink3)}
+.up{color:var(--good)}.dn{color:var(--bad)}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px;margin-top:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;min-width:0}
+.c12{grid-column:span 12}.c8{grid-column:span 8}.c7{grid-column:span 7}.c6{grid-column:span 6}.c5{grid-column:span 5}.c4{grid-column:span 4}
+@media(max-width:900px){.c8,.c7,.c6,.c5,.c4{grid-column:span 12}}
+.card h2{font-size:14px;font-weight:600;margin:0}
+.ch{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 12px;margin-bottom:8px}
+.ch p{margin:2px 0 0;font-size:12px;color:var(--ink3)}
+.cv{position:relative;height:290px}.cv.tall{height:340px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);text-align:right;font-weight:500;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+th:first-child,td:first-child{text-align:left}
+td{padding:6px 8px;border-bottom:1px solid var(--grid);text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+td:first-child{font-family:var(--f-sans);white-space:normal;min-width:130px}
+tbody tr.click{cursor:pointer}tbody tr.click:hover{background:var(--grid)}
+tr.sel{background:var(--chip)}
+.pill{display:inline-block;font-family:var(--f-sans);font-size:11px;padding:1px 8px;border-radius:99px;border:1px solid currentColor}
+.mini{display:inline-block;height:6px;border-radius:3px;background:var(--s1);vertical-align:middle;margin-right:6px}
+.flags{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.flags li{display:flex;gap:10px;align-items:flex-start;border-left:3px solid var(--warn);padding:4px 0 4px 10px}
+.flags li.r{border-color:var(--bad)}.flags li.g{border-color:var(--good)}
+.leg{display:flex;gap:14px;font-size:12px;color:var(--ink2);flex-wrap:wrap}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+/* ---- Executive layer (on top of Pulse base) ---- */
+.brand-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;padding-block:22px 8px}
+.brand h1{font-size:clamp(22px,2.4vw,28px);font-weight:600;margin:0;letter-spacing:-.02em}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.badge{font-size:11px;letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:4px 10px;color:var(--ink2)}
+.badge.live{border-color:color-mix(in srgb, var(--good) 40%, var(--line));color:var(--good)}
+.sec{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:18px 0 8px}
+.sec h2{margin:0;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.sec p{margin:0;font-size:12px;color:var(--ink3)}
+.kpi{transition:border-color .15s ease, box-shadow .15s ease}
+.kpi.on{border-color:var(--s1);box-shadow:inset 0 0 0 1px var(--s1)}
+.kpis{gap:12px}
+.card{border-radius:10px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  </style>
+</head>
+<body>
+<!--
+  Executive Sales Dashboard
+  Self-contained template. Data injected by Flask from Pulse_Builder.py / data.xlsx.
+-->
+<div class="wrap">
+<!-- Executive masthead -->
+<div class="brand-row">
+  <div class="brand">
+    <h1>Executive Sales Dashboard</h1>
+  </div>
+  <div class="actions">
+    <div class="meta">
+      <span class="badge live">Live from data.xlsx</span>
+      <span class="badge">15k lines · 60 reps · 4 regions</span>
+    </div>
+    <!-- Buttons filled from metrics.json (switchable metrics) -->
+    <div class="seg" id="metricSwitch" role="group" aria-label="Metric"></div>
+    {% if is_admin %}
+    <form action="/sync?role=admin" method="POST" onsubmit="var b=document.getElementById('syncBtn'); if(b){b.disabled=true;b.textContent='Rebuilding…';}">
+      <button id="syncBtn" type="submit">Rebuild data</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+<div class="bar" id="bar"></div>
+<div class="chips" id="chips"></div>
+
+<div class="sec"><h2>Scorecard</h2><p>Required KPIs with YoY context · selected metric is highlighted</p></div>
+<div class="kpis" id="kpis"></div>
+
+<div class="sec"><h2>Trajectory and drivers</h2><p>Trend, regions, reps, product mix — click to filter</p></div>
+<div class="grid">
+  <div class="card c8">
+    <div class="ch"><div><h2 id="tTitle">Trend</h2><p id="tSub"></p></div>
+      <div class="seg" role="group" aria-label="Trend view"><button type="button" data-t="tl" aria-pressed="true">Timeline</button><button type="button" data-t="yoy" aria-pressed="false">YoY by month</button></div></div>
+    <div class="cv tall"><canvas id="cTrend" role="img" aria-label="Monthly trend chart"></canvas></div>
+  </div>
+  <div class="card c4">
+    <div class="ch"><div><h2>By region</h2><p>Click a bar to filter</p></div></div>
+    <div class="cv tall"><canvas id="cReg" role="img" aria-label="Region bar chart"></canvas></div>
+  </div>
+
+  <div class="card c7">
+    <div class="ch"><div><h2>Sales reps</h2><p id="repSub">Click a row to filter · click a column to sort</p></div>
+      <div style="display:flex;gap:8px;align-items:center"><label class="hint" for="topN">Show</label><select id="topN"><option>5</option><option selected>10</option><option>20</option><option>60</option></select><div class="seg" role="group" aria-label="Rep ranking"><button type="button" data-o="top" aria-pressed="true">Top</button><button type="button" data-o="bot" aria-pressed="false">Bottom</button></div></div></div>
+    <div class="tw"><table id="repT"></table></div>
+  </div>
+  <div class="card c5">
+    <div class="ch"><div><h2 id="pTitle">Product mix</h2><p id="pSub">Click a bar to drill down: category, subcategory, product</p></div></div>
+    <div class="cv"><canvas id="cProd" role="img" aria-label="Product mix chart"></canvas></div>
+  </div>
+
+  <div class="card c6">
+    <div class="ch"><div><h2>Discounting vs gross margin</h2><p>Margin falls as discount deepens, most sharply in Hardware</p></div>
+      <div class="leg" id="legDisc"></div></div>
+    <div class="cv"><canvas id="cDisc" role="img" aria-label="Margin by discount band"></canvas></div>
+  </div>
+  <div class="card c6">
+    <div class="ch"><div><h2>Channel and segment health</h2><p>Discount, margin, returns and delivery side by side</p></div></div>
+    <div class="tw"><table id="chT"></table></div>
+  </div>
+
+  <div class="card c7">
+    <div class="ch"><div><h2>Top customers</h2><p>Click a row to filter · concentration is low, so no single-account risk</p></div></div>
+    <div class="tw"><table id="cuT"></table></div>
+  </div>
+  <div class="card c5">
+    <div class="ch"><div><h2>Watchlist</h2><p>Computed live from the current filter</p></div></div>
+    <ul class="flags" id="flags"></ul>
+  </div>
+</div>
+<p class="hint" id="definitions" style="margin-top:16px"></p>
+</div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script id="pulse-data" type="application/json">{{ pulse_json|safe }}</script>
+  <script id="metrics-def" type="application/json">{{ metrics_json|safe }}</script>
+  <script>
+/* ============================================================
+   Executive Sales Dashboard — client logic
+   Data: Pulse payload (D / dims / T) + metrics.json definitions
+   ============================================================ */
+
+const DATA = JSON.parse(document.getElementById('pulse-data').textContent);
+const METRICS_FILE = JSON.parse(document.getElementById('metrics-def').textContent);
+const METRIC_LIST = METRICS_FILE.metrics;
+const METRIC = Object.fromEntries(METRIC_LIST.map(m => [m.id, m]));
+
+const { D, dims, T } = DATA;
+const N = D.ns.length; // number of order lines
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const SWITCHABLE_NAMES = Object.fromEntries(
+  METRIC_LIST.filter(m => m.switchable).map(m => [m.id, m.label])
+);
+
+// UI state: selected metric, trend mode, ranking, filters, table sort
+const S = {
+  m: 'ns',          // active metric id (ns | gp | u)
+  t: 'tl',          // trend mode: tl = timeline, yoy = year overlay
+  o: 'top',         // rep ranking: top | bot
+  f: {              // active filters (empty string = All)
+    year: '', q: '', reg: '', seg: '', ch: '',
+    cat: '', sub: '', prod: '', rep: '', cust: ''
+  },
+  sort: 'val',
+  dir: -1
+};
+
+const $ = id => document.getElementById(id);
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+function formatCrore(v) {
+  return '₹' + (v / 1e7).toFixed(1) + ' Cr';
+}
+function formatValue(v, metricId = S.m) {
+  if (metricId === 'u') return Math.round(v).toLocaleString('en-IN');
+  if (v >= 1e7) return '₹' + (v / 1e7).toFixed(2) + ' Cr';
+  return '₹' + (v / 1e5).toFixed(1) + ' L';
+}
+function formatPct(v, decimals = 1) {
+  return isFinite(v) ? (v * 100).toFixed(decimals) + '%' : '–';
+}
+function yearOfRow(i) {
+  return D.mi[i] < 12 ? 2024 : 2025;
+}
+
+/* ---------- Filtering & aggregation ---------- */
+
+function pass(i, skip) {
+  const f = S.f;
+  if (skip !== 'year' && f.year && String(yearOfRow(i)) !== f.year) return false;
+  if (f.q && Math.floor((D.mi[i] % 12) / 3) + 1 != f.q) return false;
+  for (const key of ['reg','seg','ch','cat','sub','prod','rep','cust']) {
+    if (f[key] !== '' && D[key][i] !== +f[key]) return false;
+  }
+  return true;
+}
+
+function emptyAgg() {
+  return { ns: 0, gp: 0, u: 0, ret: 0, ot: 0, n: 0, disc: 0, nps: 0, rf: 0 };
+}
+
+function agg(keyFn, predicate = pass) {
+  const groups = new Map();
+  for (let i = 0; i < N; i++) {
+    if (!predicate(i)) continue;
+    const key = keyFn(i);
+    let row = groups.get(key);
+    if (!row) {
+      row = emptyAgg();
+      groups.set(key, row);
+    }
+    row.ns += D.ns[i];
+    row.gp += D.gp[i];
+    row.u += D.u[i];
+    row.ret += D.ret[i];
+    row.ot += D.ot[i];
+    row.n++;
+    row.disc += D.disc[i] / 1e4;
+    row.nps += D.nps[i];
+    row.rf += D.rf[i];
+  }
+  return groups;
+}
+
+const selectedMetric = row => (row ? row[S.m] : 0);
+
+/* Value + display format come from metrics.json so definition edits flow into the page */
+
+function metricValue(id, row, targetSum) {
+  const spec = METRIC[id];
+  if (!spec || !row) return NaN;
+  if (spec.formula === 'field') return row[spec.field];
+  if (spec.formula === 'ratio') {
+    const den = row[spec.denominator];
+    return den ? row[spec.numerator] / den : NaN;
+  }
+  if (spec.formula === 'attainment') {
+    if (!targetsOk() || !targetSum) return NaN;
+    return selectedMetric(row) / targetSum;
+  }
+  return NaN;
+}
+
+function formatMetric(id, value) {
+  const spec = METRIC[id];
+  if (!spec) return '–';
+  if (!isFinite(value)) return 'n/a';
+  if (spec.format === 'crore') return formatCrore(value);
+  if (spec.format === 'percent') return formatPct(value, spec.decimals == null ? 1 : spec.decimals);
+  if (spec.format === 'count') return Math.round(value).toLocaleString('en-IN');
+  return String(value);
+}
+
+function metricLabel(spec) {
+  if (spec.id === 'att') return spec.label + ' (' + (SWITCHABLE_NAMES[S.m] || S.m) + ')';
+  return spec.label;
+}
+
+function writeDefinitions() {
+  const el = $('definitions');
+  if (!el) return;
+  el.textContent = 'Definitions (from metrics.json): ' +
+    METRIC_LIST.map(m => m.label + ' — ' + m.definition).join(' ');
+}
+
+/* ---------- Targets (sum once per rep-month) ---------- */
+
+function targetsOk() {
+  const f = S.f;
+  return f.seg === '' && f.ch === '' && f.cat === '' &&
+         f.sub === '' && f.prod === '' && f.cust === '';
+}
+
+// Column indexes inside each T row: [rep, mi, nsTarget, gpTarget, unitsTarget]
+const TARGET_COL = { ns: 2, gp: 3, u: 4 };
+
+function targets(yearOverride) {
+  const f = S.f;
+  const yearFilter = yearOverride || f.year;
+  let sum = 0;
+  const byM = new Array(24).fill(0);
+  const byRep = new Map();
+  const byReg = new Map();
+
+  for (const row of T) {
+    const [rep, mi] = row;
+    if (f.rep !== '' && rep !== +f.rep) continue;
+    if (f.reg !== '' && dims.repreg[rep] !== +f.reg) continue;
+    if (yearFilter && String(mi < 12 ? 2024 : 2025) !== yearFilter) continue;
+    if (f.q && Math.floor((mi % 12) / 3) + 1 != f.q) continue;
+
+    const v = row[TARGET_COL[S.m]];
+    sum += v;
+    byM[mi] += v;
+    byRep.set(rep, (byRep.get(rep) || 0) + v);
+    const reg = dims.repreg[rep];
+    byReg.set(reg, (byReg.get(reg) || 0) + v);
+  }
+  return { sum, byM, byRep, byReg };
+}
+
+function targetsAllReg() {
+  const saved = S.f.reg;
+  S.f.reg = '';
+  const byReg = targets().byReg;
+  S.f.reg = saved;
+  return byReg;
+}
+
+/* ---------- Filter bar & chips ---------- */
+
+const FILTERS = [
+  ['year', 'Year', [['','All'],['2024','2024'],['2025','2025']]],
+  ['q', 'Quarter', [['','All'],['1','Q1'],['2','Q2'],['3','Q3'],['4','Q4']]],
+  ['reg', 'Region', null, 'reg'],
+  ['seg', 'Segment', null, 'seg'],
+  ['ch', 'Channel', null, 'ch'],
+  ['cat', 'Category', null, 'cat']
+];
+
+function buildBar() {
+  $('bar').innerHTML = FILTERS.map(([key, label, options, dimKey]) => {
+    const opts = options || [['','All'], ...dims[dimKey].map((v, i) => [String(i), v])];
+    const optionHtml = opts.map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
+    return `<label>${label}<select id="f_${key}">${optionHtml}</select></label>`;
+  }).join('') + `<button id="reset">Reset</button>`;
+
+  FILTERS.forEach(([key]) => {
+    $('f_' + key).onchange = e => {
+      S.f[key] = e.target.value;
+      if (key === 'cat') { S.f.sub = ''; S.f.prod = ''; }
+      render();
+    };
+  });
+  $('reset').onclick = () => {
+    for (const key in S.f) S.f[key] = '';
+    render();
+  };
+}
+
+function syncBar() {
+  FILTERS.forEach(([key]) => { $('f_' + key).value = S.f[key]; });
+}
+
+function chips() {
+  const f = S.f;
+  const parts = [];
+  const add = (key, text) => parts.push(`<button class="chip" data-k="${key}">${text}</button>`);
+
+  if (f.sub !== '') add('sub', 'Subcategory: ' + dims.sub[f.sub]);
+  if (f.prod !== '') add('prod', 'Product: ' + dims.prod[f.prod]);
+  if (f.rep !== '') add('rep', 'Rep: ' + dims.repname[f.rep]);
+  if (f.cust !== '') add('cust', 'Customer: ' + dims.cust[f.cust]);
+
+  $('chips').innerHTML = parts.join('') ||
+    '<span class="hint">Tip: click any region, product, rep or customer to drill in. Filters combine.</span>';
+
+  $('chips').querySelectorAll('button').forEach(btn => {
+    btn.onclick = () => {
+      const key = btn.dataset.k;
+      S.f[key] = '';
+      if (key === 'sub') S.f.prod = '';
+      render();
+    };
+  });
+}
+
+/* ---------- KPI scorecard ---------- */
+
+function snapshot(row, targetSum) {
+  const out = {};
+  for (const spec of METRIC_LIST) out[spec.id] = metricValue(spec.id, row, targetSum);
+  return out;
+}
+
+function kpis() {
+  const all = [...agg(() => 0).values()][0] || { ns: 0, gp: 0, u: 0, ret: 0, ot: 0, n: 0 };
+  const ok = targetsOk();
+  const tg = targets();
+  const cur = snapshot(all, tg.sum);
+
+  let yoy = null;
+  let yoyLabel = '';
+  if (S.f.year !== '2024') {
+    // YoY: 2025 vs 2024 under the same other filters
+    const byYear = agg(i => yearOfRow(i), i => pass(i, 'year'));
+    const a = byYear.get(2025);
+    const b = byYear.get(2024);
+    if (a && b) {
+      yoy = {
+        cur: snapshot(a, targets('2025').sum),
+        old: snapshot(b, targets('2024').sum)
+      };
+      yoyLabel = S.f.year === '2025' ? 'vs 2024' : '2025 vs 2024';
+    }
+  }
+
+  const defs = METRIC_LIST.filter(spec => spec.scorecard);
+  $('kpis').innerHTML = defs.map(spec => {
+    const id = spec.id;
+    const kind = spec.yoy;
+    const value = cur[id];
+    const text = (spec.needs_target_scope && !ok) ? 'n/a' : formatMetric(id, value);
+    let delta = '';
+
+    if (spec.needs_target_scope && !ok) {
+      delta = 'needs rep/month scope';
+    } else if (
+      yoy && isFinite(yoy.cur[id]) && isFinite(yoy.old[id]) && yoy.old[id] !== 0
+    ) {
+      const a = yoy.cur[id];
+      const b = yoy.old[id];
+      const diff = kind === 'rel' ? (a / b - 1) : (a - b);
+      const good = kind === 'pp-' ? diff < 0 : diff >= 0;
+      const amount = kind === 'rel'
+        ? (Math.abs(diff) * 100).toFixed(1) + '%'
+        : (Math.abs(diff) * 100).toFixed(1) + ' pts';
+      delta = `<span class="${good ? 'up' : 'dn'}">${diff >= 0 ? '▲' : '▼'} ${amount}</span> ${yoyLabel}`;
+    } else if (id === 'att' && isFinite(value)) {
+      delta = value >= 1 ? 'at or above target' : 'below target';
+    }
+
+    const on = (id === S.m) ? ' on' : '';
+    const title = spec.definition.replace(/"/g, '&quot;');
+    return `<div class="kpi${on}" title="${title}">` +
+      `<div class="l">${metricLabel(spec)}</div>` +
+      `<div class="v">${text}</div>` +
+      `<div class="d">${delta || '&nbsp;'}</div></div>`;
+  }).join('');
+
+  return { tg, ok };
+}
+
+/* ---------- Charts ---------- */
+
+let charts = {};
+
+function makeChart(id, cfg) {
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart($(id), cfg);
+  return charts[id];
+}
+
+function applyChartDefaults() {
+  Chart.defaults.font.family = css('--f-sans');
+  Chart.defaults.font.size = 12;
+  Chart.defaults.color = css('--ink2');
+}
+
+function axisOpts(extra = {}) {
+  return {
+    grid: { color: css('--grid') },
+    border: { display: false },
+    ticks: { color: css('--ink2') },
+    ...extra
+  };
+}
+
+function trendOptions(isUnits) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top', align: 'end', labels: { boxWidth: 10, usePointStyle: true } },
+      tooltip: {
+        callbacks: {
+          label: c => c.dataset.label + ': ' + (c.parsed.y == null ? '–' : formatValue(c.parsed.y))
+        }
+      }
+    },
+    scales: {
+      x: axisOpts({ grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } }),
+      y: axisOpts({
+        beginAtZero: true,
+        ticks: {
+          callback: v => isUnits ? v.toLocaleString('en-IN') : (v / 1e7).toFixed(0) + ' Cr'
+        }
+      })
+    }
+  };
+}
+
+function trend(tg, ok) {
+  const f = S.f;
+  const isUnits = S.m === 'u';
+
+  if (S.t === 'tl') {
+    const byMonth = agg(i => D.mi[i]);
+    const labels = [];
+    const actual = [];
+    const target = [];
+
+    for (let m = 0; m < 24; m++) {
+      if (f.year && String(m < 12 ? 2024 : 2025) !== f.year) continue;
+      if (f.q && Math.floor((m % 12) / 3) + 1 != f.q) continue;
+      labels.push(MONTHS[m % 12] + " '" + (m < 12 ? 24 : 25));
+      actual.push(selectedMetric(byMonth.get(m)));
+      target.push(ok ? tg.byM[m] : null);
+    }
+
+    const datasets = [{
+      label: SWITCHABLE_NAMES[S.m],
+      data: actual,
+      borderColor: css('--s1'),
+      backgroundColor: css('--s1') + '22',
+      fill: true,
+      tension: 0.25,
+      borderWidth: 2,
+      pointRadius: 3,
+      pointHoverRadius: 6,
+      pointBackgroundColor: css('--surface'),
+      pointBorderWidth: 2
+    }];
+    if (ok) {
+      datasets.push({
+        label: 'Target',
+        data: target,
+        borderColor: css('--s2'),
+        borderDash: [6, 4],
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: false,
+        tension: 0.25
+      });
+    }
+
+    $('tTitle').textContent = SWITCHABLE_NAMES[S.m] + ' by month';
+    $('tSub').textContent = ok
+      ? 'Actual vs target, summed over the selected reps'
+      : 'Targets hidden while a segment, channel or product filter is on';
+    makeChart('cTrend', {
+      type: 'line',
+      data: { labels, datasets },
+      options: trendOptions(isUnits)
+    });
+  } else {
+    const byMonth = agg(i => D.mi[i]);
+    const datasets = [2024, 2025].map((y, j) => ({
+      label: String(y),
+      data: MONTHS.map((_, m) => selectedMetric(byMonth.get((y - 2024) * 12 + m))),
+      borderColor: j ? css('--s1') : css('--s2'),
+      borderWidth: 2,
+      pointRadius: 3,
+      tension: 0.25,
+      fill: false
+    }));
+    $('tTitle').textContent = SWITCHABLE_NAMES[S.m] + ': 2025 vs 2024';
+    $('tSub').textContent = 'Same calendar months overlaid. Seasonality peaks in Q4 (Oct–Dec)';
+    makeChart('cTrend', {
+      type: 'line',
+      data: { labels: MONTHS, datasets },
+      options: trendOptions(isUnits)
+    });
+  }
+}
+
+function hbar(id, labels, data, colors, extra, onclick, fmt) {
+  return makeChart(id, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors,
+        borderRadius: 4,
+        borderSkipped: 'start',
+        maxBarThickness: 26
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      onClick: (e, els) => { if (els.length && onclick) onclick(els[0].index); },
+      onHover: (e, els) => {
+        e.native.target.style.cursor = els.length && onclick ? 'pointer' : 'default';
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: c => fmt(c.parsed.x),
+            afterLabel: c => extra[c.dataIndex]
+          }
+        }
+      },
+      scales: {
+        x: axisOpts({
+          beginAtZero: true,
+          ticks: {
+            callback: v => S.m === 'u' ? v.toLocaleString('en-IN') : (v / 1e7).toFixed(0) + ' Cr'
+          }
+        }),
+        y: axisOpts({ grid: { display: false }, ticks: { color: css('--ink') } })
+      }
+    }
+  });
+}
+
+function region(tg, ok) {
+  // Aggregate with region filter cleared so all regions stay visible for click-to-filter
+  const byReg = agg(i => D.reg[i], i => {
+    const saved = S.f.reg;
+    S.f.reg = '';
+    const okRow = pass(i);
+    S.f.reg = saved;
+    return okRow;
+  });
+
+  const order = dims.reg.map((_, i) => i)
+    .sort((a, b) => selectedMetric(byReg.get(b)) - selectedMetric(byReg.get(a)));
+  const tgByReg = ok ? targetsAllReg() : null;
+
+  hbar(
+    'cReg',
+    order.map(i => dims.reg[i]),
+    order.map(i => selectedMetric(byReg.get(i))),
+    order.map(i => (S.f.reg === '' || +S.f.reg === i) ? css('--s1') : css('--s1') + '55'),
+    order.map(i => {
+      const a = byReg.get(i);
+      if (!a) return '';
+      let tip = `Margin ${formatPct(a.gp / a.ns)} · On-time ${formatPct(a.ot / a.n)}`;
+      if (ok && tgByReg.get(i)) tip += ` · Attainment ${formatPct(selectedMetric(a) / tgByReg.get(i))}`;
+      return tip;
+    }),
+    k => {
+      const i = order[k];
+      S.f.reg = S.f.reg === String(i) ? '' : String(i);
+      render();
+    },
+    v => formatValue(v)
+  );
+}
+
+function product() {
+  const f = S.f;
+  let key, title;
+
+  if (f.sub !== '') {
+    key = 'prod';
+    title = 'Products in ' + dims.sub[f.sub];
+  } else if (f.cat !== '') {
+    key = 'sub';
+    title = 'Subcategories in ' + dims.cat[f.cat];
+  } else {
+    key = 'cat';
+    title = 'Product mix by category';
+  }
+
+  // Temporarily clear this dimension so all bars stay visible
+  const saved = f[key];
+  f[key] = '';
+  const byKey = agg(i => D[key][i]);
+  f[key] = saved;
+
+  const order = [...byKey.keys()].sort(
+    (a, b) => selectedMetric(byKey.get(b)) - selectedMetric(byKey.get(a))
+  );
+  $('pTitle').textContent = title;
+
+  const colors = order.map(i =>
+    (f[key] === '' || +f[key] === i) ? css('--s1') : css('--s1') + '55'
+  );
+
+  hbar(
+    'cProd',
+    order.map(i => dims[key][i]),
+    order.map(i => selectedMetric(byKey.get(i))),
+    colors,
+    order.map(i => {
+      const a = byKey.get(i);
+      return `Margin ${formatPct(a.gp / a.ns)} · Returns ${formatPct(a.ret / a.ns)} · Avg discount ${formatPct(a.disc / a.n)}`;
+    }),
+    k => {
+      const i = order[k];
+      if (key === 'cat') f.cat = String(i);
+      else if (key === 'sub') f.sub = String(i);
+      else f.prod = f.prod === String(i) ? '' : String(i);
+      render();
+    },
+    v => formatValue(v)
+  );
+}
+
+function disc() {
+  const bands = [
+    [0, 0.05, '<5%'],
+    [0.05, 0.10, '5–10%'],
+    [0.10, 0.15, '10–15%'],
+    [0.15, 1, '>15%']
+  ];
+  const buckets = dims.cat.map(() => bands.map(() => ({ gp: 0, ns: 0, n: 0 })));
+
+  for (let i = 0; i < N; i++) {
+    if (!pass(i)) continue;
+    const discount = D.disc[i] / 1e4;
+    const band = bands.findIndex(x => discount >= x[0] && discount < x[1]);
+    const cell = buckets[D.cat[i]][band];
+    cell.gp += D.gp[i];
+    cell.ns += D.ns[i];
+    cell.n++;
+  }
+
+  const colors = [css('--s1'), css('--s2'), css('--s3')];
+  $('legDisc').innerHTML = dims.cat.map((c, i) =>
+    `<span><i style="background:${colors[i]}"></i>${c}</span>`
+  ).join('');
+
+  makeChart('cDisc', {
+    type: 'line',
+    data: {
+      labels: bands.map(b => b[2]),
+      datasets: dims.cat.map((c, i) => ({
+        label: c,
+        data: buckets[i].map(a => a.n >= 5 ? a.gp / a.ns : null),
+        borderColor: colors[i],
+        backgroundColor: colors[i],
+        borderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBorderColor: css('--surface'),
+        pointBorderWidth: 2,
+        tension: 0.2
+      }))
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: c => c.dataset.label + ': ' + formatPct(c.parsed.y) +
+              ' margin (' + buckets[c.datasetIndex][c.dataIndex].n + ' lines)'
+          }
+        }
+      },
+      scales: {
+        x: axisOpts({
+          grid: { display: false },
+          title: { display: true, text: 'Discount band', color: css('--ink3') }
+        }),
+        y: axisOpts({
+          min: 0,
+          ticks: { callback: v => (v * 100) + '%' },
+          title: { display: true, text: 'Gross margin', color: css('--ink3') }
+        })
+      }
+    }
+  });
+}
+
+/* ---------- Tables ---------- */
+
+function attainmentPill(a) {
+  if (!isFinite(a)) return '<span class="hint">n/a</span>';
+  const color = a >= 1 ? '--good' : a >= 0.95 ? '--warn' : '--bad';
+  return `<span class="pill" style="color:var(${color})">${formatPct(a, 0)}</span>`;
+}
+
+function bindSortHeaders(table, cols) {
+  table.querySelectorAll('th').forEach((th, i) => {
+    th.onclick = () => {
+      const key = cols[i];
+      S.dir = S.sort === key ? -S.dir : -1;
+      S.sort = key;
+      render();
+    };
+  });
+}
+
+function reps(tg, ok) {
+  const byRep = agg(i => D.rep[i]);
+  const sortKey = S.sort;
+
+  let rows = [...byRep.entries()].map(([i, a]) => ({
+    i,
+    a,
+    v: selectedMetric(a),
+    att: ok && tg.byRep.get(i) ? selectedMetric(a) / tg.byRep.get(i) : NaN,
+    gm: a.gp / a.ns,
+    rr: a.ret / a.ns,
+    ot: a.ot / a.n
+  }));
+
+  const field = { val: 'v', att: 'att', gm: 'gm', rr: 'rr', ot: 'ot' }[sortKey] || 'v';
+  const n = +$('topN').value;
+
+  rows.sort((x, y) => S.o === 'top' ? y.v - x.v : x.v - y.v);
+  rows = rows.slice(0, n);
+
+  if (sortKey !== 'val') {
+    rows.sort((x, y) => {
+      const yv = isFinite(y[field]) ? y[field] : -1;
+      const xv = isFinite(x[field]) ? x[field] : -1;
+      return (yv - xv) * (S.dir === -1 ? 1 : -1);
+    });
+  }
+
+  const maxVal = Math.max(...rows.map(r => r.v), 1);
+  $('repT').innerHTML =
+    `<thead><tr><th>Rep</th><th>${SWITCHABLE_NAMES[S.m]}</th><th>Attainment</th><th>Margin</th><th>Returns</th><th>On-time</th></tr></thead><tbody>` +
+    rows.map(r => {
+      const selected = +S.f.rep === r.i && S.f.rep !== '';
+      const barW = Math.round(r.v / maxVal * 60);
+      return `<tr class="click ${selected ? 'sel' : ''}" data-i="${r.i}">` +
+        `<td>${dims.repname[r.i]} <span class="hint">${dims.reg[dims.repreg[r.i]]} · ${dims.repten[r.i]}</span></td>` +
+        `<td><span class="mini" style="width:${barW}px"></span>${formatValue(r.v)}</td>` +
+        `<td>${attainmentPill(r.att)}</td>` +
+        `<td>${formatPct(r.gm)}</td>` +
+        `<td>${formatPct(r.rr)}</td>` +
+        `<td>${formatPct(r.ot)}</td></tr>`;
+    }).join('') + '</tbody>';
+
+  $('repT').querySelectorAll('tr.click').forEach(tr => {
+    tr.onclick = () => {
+      S.f.rep = S.f.rep === tr.dataset.i ? '' : tr.dataset.i;
+      render();
+    };
+  });
+  bindSortHeaders($('repT'), ['val','val','att','gm','rr','ot']);
+}
+
+function channelSegmentTable() {
+  function groupRows(key, labels) {
+    const byKey = agg(i => D[key][i]);
+    return [...byKey.entries()]
+      .sort((a, b) => b[1].ns - a[1].ns)
+      .map(([i, a]) => {
+        const ot = a.ot / a.n;
+        const otColor = ot < 0.8 ? css('--bad') : 'inherit';
+        return `<tr>` +
+          `<td>${labels[i]}</td>` +
+          `<td>${formatCrore(a.ns)}</td>` +
+          `<td>${formatPct(a.disc / a.n)}</td>` +
+          `<td>${formatPct(a.gp / a.ns)}</td>` +
+          `<td>${formatPct(a.ret / a.ns)}</td>` +
+          `<td style="color:${otColor}">${formatPct(ot)}</td></tr>`;
+      }).join('');
+  }
+
+  const section = label =>
+    `<tr><td colspan=6 class="hint" style="font-family:var(--f-sans)">${label}</td></tr>`;
+
+  $('chT').innerHTML =
+    '<thead><tr><th>Group</th><th>Net sales</th><th>Avg disc.</th><th>Margin</th><th>Returns</th><th>On-time</th></tr></thead><tbody>' +
+    section('Channel') + groupRows('ch', dims.ch) +
+    section('Segment') + groupRows('seg', dims.seg) +
+    '</tbody>';
+}
+
+function custTable() {
+  const byCust = agg(i => D.cust[i]);
+  const rows = [...byCust.entries()]
+    .sort((a, b) => selectedMetric(b[1]) - selectedMetric(a[1]))
+    .slice(0, 10);
+  const total = [...byCust.values()].reduce((s, a) => s + selectedMetric(a), 0);
+
+  $('cuT').innerHTML =
+    '<thead><tr><th>Customer</th><th>' + SWITCHABLE_NAMES[S.m] +
+    '</th><th>Share</th><th>Margin</th><th>Returns</th><th>NPS</th></tr></thead><tbody>' +
+    rows.map(([i, a]) => {
+      const selected = S.f.cust !== '' && +S.f.cust === i;
+      return `<tr class="click ${selected ? 'sel' : ''}" data-i="${i}">` +
+        `<td>${dims.cust[i]} <span class="hint">${dims.seg[dims.custseg[i]]}</span></td>` +
+        `<td>${formatValue(selectedMetric(a))}</td>` +
+        `<td>${formatPct(selectedMetric(a) / total)}</td>` +
+        `<td>${formatPct(a.gp / a.ns)}</td>` +
+        `<td>${formatPct(a.ret / a.ns)}</td>` +
+        `<td>${(a.nps / a.n).toFixed(1)}</td></tr>`;
+    }).join('') + '</tbody>';
+
+  $('cuT').querySelectorAll('tr.click').forEach(tr => {
+    tr.onclick = () => {
+      S.f.cust = S.f.cust === tr.dataset.i ? '' : tr.dataset.i;
+      render();
+    };
+  });
+}
+
+/* ---------- Watchlist / exception flags ---------- */
+
+function flags(tg, ok) {
+  const out = [];
+  const tot = [...agg(() => 0).values()][0];
+  if (!tot) {
+    $('flags').innerHTML = '<li>No data for this selection.</li>';
+    return;
+  }
+
+  const baseline = {
+    ot: tot.ot / tot.n,
+    rr: tot.ret / tot.ns,
+    gm: tot.gp / tot.ns
+  };
+
+  function scan(key, labels, minN) {
+    const byKey = agg(i => D[key][i]);
+    for (const [i, a] of byKey) {
+      if (a.n < minN) continue;
+      const ot = a.ot / a.n;
+      const rr = a.ret / a.ns;
+      const gm = a.gp / a.ns;
+      if (ot < baseline.ot - 0.07) {
+        out.push([2, 'r', `<b>${labels[i]}</b> delivers on time only ${formatPct(ot)} (overall ${formatPct(baseline.ot)}).`]);
+      }
+      if (rr > baseline.rr * 1.4 && a.n >= minN) {
+        out.push([1, '', `<b>${labels[i]}</b> return rate ${formatPct(rr)} vs ${formatPct(baseline.rr)} overall.`]);
+      }
+      if (gm < baseline.gm - 0.15 && key !== 'cat') {
+        out.push([1, '', `<b>${labels[i]}</b> margin ${formatPct(gm)} vs ${formatPct(baseline.gm)} overall.`]);
+      }
+    }
+  }
+
+  scan('reg', dims.reg, 50);
+  scan('ch', dims.ch, 50);
+  scan('sub', dims.sub, 50);
+
+  if (ok) {
+    const byRepTarget = targets().byRep;
+    let low = 0;
+    let n = 0;
+    const byRep = agg(i => D.rep[i]);
+    for (const [i, a] of byRep) {
+      const t = byRepTarget.get(i);
+      if (t) {
+        n++;
+        if (selectedMetric(a) / t < 0.9) low++;
+      }
+    }
+    if (low) out.push([2, 'r', `<b>${low} of ${n} reps</b> are below 90% of target.`]);
+    const att = selectedMetric(tot) / tg.sum;
+    if (isFinite(att)) {
+      out.push([
+        att >= 1 ? 0 : 2,
+        att >= 1 ? 'g' : 'r',
+        `Overall attainment is <b>${formatPct(att)}</b>.`
+      ]);
+    }
+  }
+
+  out.sort((a, b) => b[0] - a[0]);
+  $('flags').innerHTML = out.slice(0, 7).map(o =>
+    `<li class="${o[1]}"><span>${o[2]}</span></li>`
+  ).join('') ||
+    '<li class="g"><span>Nothing stands out against the overall averages for this selection.</span></li>';
+}
+
+/* ---------- Render & controls ---------- */
+
+function render() {
+  syncBar();
+  chips();
+  applyChartDefaults();
+  const { tg, ok } = kpis();
+  trend(tg, ok);
+  region(tg, ok);
+  product();
+  disc();
+  reps(tg, ok);
+  channelSegmentTable();
+  custTable();
+  flags(tg, ok);
+}
+
+function buildMetricSwitch() {
+  const box = $('metricSwitch');
+  if (!box) return;
+  box.innerHTML = METRIC_LIST.filter(m => m.switchable).map(m =>
+    `<button type="button" data-m="${m.id}" aria-pressed="${m.id === S.m ? 'true' : 'false'}">${m.label}</button>`
+  ).join('');
+}
+
+function bindToggleGroup(attr, stateKey) {
+  document.querySelectorAll('[' + attr + ']').forEach(btn => {
+    btn.onclick = () => {
+      S[stateKey] = btn.getAttribute(attr);
+      document.querySelectorAll('[' + attr + ']').forEach(x =>
+        x.setAttribute('aria-pressed', x === btn ? 'true' : 'false')
+      );
+      render();
+    };
+  });
+}
+
+function bindControls() {
+  bindToggleGroup('data-m', 'm');
+  bindToggleGroup('data-t', 't');
+  bindToggleGroup('data-o', 'o');
+  const topN = $('topN');
+  if (topN) topN.onchange = render;
+}
+
+writeDefinitions();
+buildMetricSwitch();
+bindControls();
+buildBar();
+render();
+
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => setTimeout(render, 50));
+new MutationObserver(() => setTimeout(render, 50)).observe(
+  document.documentElement,
+  { attributes: true, attributeFilter: ['data-theme'] }
+);
+  </script>
+</body>
+</html>
